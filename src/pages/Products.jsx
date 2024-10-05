@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowBigLeft, ArrowBigRight, Plus } from 'lucide-react';
 import EditProductModal from '../components/EditProductModal';
 import AddProductModal from '../components/AddProductModal';
+import axios from 'axios';
 
 const Products = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -9,6 +10,10 @@ const Products = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentEditProduct, setCurrentEditProduct] = useState(null);
   const [showFavorites, setShowFavorites] = useState(false);
+  const [productItems, setProductItems] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const slides = [
     {
@@ -27,41 +32,106 @@ const Products = () => {
     }
   ];
 
-  const [productItems, setProductItems] = useState([
-    {
-      id: 1,
-      imageUrl: "/path/to/table-image.jpg",
-      title: "Table",
-      price: 120.00,
-      rating: 4,
-      reviews: 131
-    },
-    {
-      id: 2,
-      imageUrl: "/path/to/table-image.jpg",
-      title: "Table",
-      price: 120.00,
-      rating: 4,
-      reviews: 131
-    },
-    {
-      id: 3,
-      imageUrl: "/path/to/table-image.jpg",
-      title: "Table",
-      price: 120.00,
-      rating: 4,
-      reviews: 131
-    }
-  ]);
-
-  const [favorites, setFavorites] = useState(() => {
-    const savedFavorites = localStorage.getItem('favorites');
-    return savedFavorites ? JSON.parse(savedFavorites) : [];
-  });
-
   useEffect(() => {
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-  }, [favorites]);
+    fetchProducts();
+    fetchFavorites();
+  }, []);
+
+  const fetchProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get('https://ecommerce-website22.onrender.com/product/get');
+      if (response.data.success && Array.isArray(response.data.products)) {
+        setProductItems(response.data.products);
+      } else {
+        throw new Error('Unexpected API response format');
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setError('Failed to fetch products. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await axios.get('https://ecommerce-website22.onrender.com/product/getWishlist');
+      if (Array.isArray(response.data)) {
+        setFavorites(response.data);
+      } else if (typeof response.data === 'object' && Array.isArray(response.data.wishlist)) {
+        setFavorites(response.data.wishlist);
+      } else {
+        throw new Error('Unexpected API response format for favorites');
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleToggleFavorite = async (product) => {
+    try {
+      const response = await axios.post('https://ecommerce-website22.onrender.com/product/addToWishlist', {
+        productId: product._id
+      });
+      
+      if (response.data.success) {
+        setFavorites(prev => {
+          const isAlreadyFavorite = prev.some(fav => fav._id === product._id);
+          if (isAlreadyFavorite) {
+            return prev.filter(fav => fav._id !== product._id);
+          } else {
+            return [...prev, product];
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleSaveEdit = async (editedProduct) => {
+    try {
+      const response = await axios.put(`https://ecommerce-website22.onrender.com/product/update/${editedProduct._id}`, editedProduct);
+      if (response.data.success) {
+        setProductItems(prev => prev.map(item => item._id === editedProduct._id ? editedProduct : item));
+        setShowEditModal(false);
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleAddProduct = async (newProduct) => {
+    try {
+      const response = await axios.post('https://ecommerce-website22.onrender.com/product/create', newProduct);
+      if (response.data.success) {
+        setProductItems(prev => [...prev, response.data.product]);
+        setShowAddModal(false);
+      }
+    } catch (error) {
+      console.error('Error adding product:', error);
+      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleRemoveProduct = async (productId) => {
+    try {
+      const response = await axios.delete(`https://ecommerce-website22.onrender.com/product/delete/${productId}`);
+      if (response.data.success) {
+        setProductItems(prev => prev.filter(item => item._id !== productId));
+        setFavorites(prev => prev.filter(item => item._id !== productId));
+        setShowEditModal(false);
+      }
+    } catch (error) {
+      console.error('Error removing product:', error);
+      // You might want to show an error message to the user here
+    }
+  };
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
@@ -76,38 +146,17 @@ const Products = () => {
     setShowEditModal(true);
   };
 
-  const handleToggleFavorite = (product) => {
-    setFavorites(prev => {
-      const isAlreadyFavorite = prev.some(fav => fav.id === product.id);
-      if (isAlreadyFavorite) {
-        return prev.filter(fav => fav.id !== product.id);
-      } else {
-        return [...prev, product];
-      }
-    });
-  };
-
-  const handleSaveEdit = (editedProduct) => {
-    setProductItems(prev => 
-      prev.map(item => 
-        item.id === editedProduct.id ? editedProduct : item
-      )
-    );
-    setShowEditModal(false);
-  };
-
-  const handleAddProduct = (newProduct) => {
-    setProductItems(prev => [...prev, { ...newProduct, id: prev.length + 1 }]);
-    setShowAddModal(false);
-  };
-
   const ProductCard = ({ product }) => {
-    const isFavorite = favorites.some(fav => fav.id === product.id);
+    const isFavorite = favorites.some(fav => fav._id === product._id);
 
     return (
       <div className="bg-white rounded-lg overflow-hidden shadow">
         <div className="relative">
-          <img src={product.imageUrl} alt={product.title} className="w-full h-64 object-cover" />
+          <img 
+            src={product.images[0] || "/api/placeholder/400/320"} 
+            alt={product.name} 
+            className="w-full h-64 object-cover" 
+          />
           <button
             onClick={() => handleToggleFavorite(product)}
             className="absolute top-2 right-2 p-2 bg-white rounded-full shadow"
@@ -118,19 +167,25 @@ const Products = () => {
           </button>
         </div>
         <div className="p-4">
-          <h3 className="text-lg font-semibold">{product.title}</h3>
-          <p className="text-xl font-bold mt-1">${product.price.toFixed(2)}</p>
+          <h3 className="text-lg font-semibold">{product.name}</h3>
+          <div className="flex items-center mt-1">
+            <p className="text-xl font-bold">${product.discountedPrice.toFixed(2)}</p>
+            {product.originalPrice && (
+              <p className="ml-2 text-gray-500 line-through">${product.originalPrice.toFixed(2)}</p>
+            )}
+          </div>
           <div className="flex items-center mt-2">
             {[...Array(5)].map((_, i) => (
-              <svg key={i} className={`w-5 h-5 ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+              <svg key={i} className={`w-5 h-5 ${i < (product.rating || 0) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
             ))}
-            <span className="ml-2 text-gray-600">({product.reviews})</span>
+            <span className="ml-2 text-gray-600">({product.reviews.length})</span>
           </div>
+          <p className="text-sm text-gray-600 mt-2">{product.category}</p>
           <button 
             onClick={() => handleEditProduct(product)}
-            className="mt-4 px-4 py-2 bg-gray-100 text-gray-800 text-sm rounded-md hover:bg-gray-200 transition duration-300 flex items-center justify-center"
+            className="mt-4 px-4 py-2 bg-gray-100 text-gray-800 text-sm rounded-md hover:bg-gray-200 transition duration-300 flex items-center justify-center w-full"
           >
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -141,6 +196,14 @@ const Products = () => {
       </div>
     );
   };
+
+  if (isLoading) {
+    return <div className="p-8">Loading products...</div>;
+  }
+
+  if (error) {
+    return <div className="p-8 text-red-500">{error}</div>;
+  }
 
   return (
     <div className="p-8 relative">
@@ -162,7 +225,6 @@ const Products = () => {
         </div>
       </div>
       
-      {/* Slider - only show on All Products */}
       {!showFavorites && (
         <div className="relative w-full mb-12 bg-[#15171A] rounded-lg overflow-hidden">
           <div className="flex transition-transform duration-500" 
@@ -189,15 +251,13 @@ const Products = () => {
         </div>
       )}
 
-      {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {showFavorites
-          ? favorites.map(product => <ProductCard key={product.id} product={product} />)
-          : productItems.map(product => <ProductCard key={product.id} product={product} />)
+          ? favorites.map(product => <ProductCard key={product._id} product={product} />)
+          : productItems.map(product => <ProductCard key={product._id} product={product} />)
         }
       </div>
 
-      {/* Add New Product Button */}
       <button
         onClick={() => setShowAddModal(true)}
         className="fixed bottom-8 right-8 bg-white text-gray-800 font-semibold py-3 px-6 border border-gray-400 rounded-full shadow-lg flex items-center hover:bg-gray-100 transition-colors duration-300"
@@ -206,16 +266,15 @@ const Products = () => {
         Add New Product
       </button>
 
-      {/* Edit Modal */}
       {showEditModal && (
         <EditProductModal
           product={currentEditProduct}
           onSave={handleSaveEdit}
           onCancel={() => setShowEditModal(false)}
+          onRemoveProduct={handleRemoveProduct}
         />
       )}
 
-      {/* Add Modal */}
       {showAddModal && (
         <AddProductModal
           onSave={handleAddProduct}

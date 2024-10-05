@@ -4,7 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import Favorites from './pages/Favorites';
 import Inbox from './pages/Inbox';
-// import OrderLists from './pages/OrderLists';
+import OrderLists from './pages/OrderLists';
 import ProductStock from './pages/ProductStock';
 // import Settings from './pages/Settings';
 
@@ -20,9 +20,9 @@ function App() {
             <Route path="/favorites" element={<Favorites />} />
             <Route path="/inbox" element={<Inbox />} />
             <Route path="/product-stock" element={<ProductStock />} />
-            {/* <Route path="/order-lists" element={<OrderLists />} />
+            <Route path="/order-lists" element={<OrderLists />} />
             
-            <Route path="/settings" element={<Settings />} /> */}
+            {/* <Route path="/settings" element={<Settings />} /> */}
           </Routes>
         </main>
       </div>
