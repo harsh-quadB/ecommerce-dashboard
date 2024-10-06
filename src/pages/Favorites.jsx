@@ -39,7 +39,6 @@ const Favorites = () => {
       }
     } catch (error) {
       console.error('Error removing from favorites:', error);
-      // You might want to show an error message to the user here
     }
   };
 
@@ -68,19 +67,27 @@ const Favorites = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {favoriteProducts.map(product => (
           <div key={product._id} className="bg-white p-4 rounded-lg shadow">
-            <img src={product.images[0] || "/api/placeholder/400/320"} alt={product.name} className="w-full h-64 object-cover mb-4" />
+            <img 
+              src={product.images?.[0] || "/api/placeholder/400/320"} 
+              alt={product.name} 
+              className="w-full h-64 object-cover mb-4" 
+            />
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="text-lg font-semibold mb-1">{product.name}</h3>
-                <p className="text-lg font-bold mb-2">${product.discountedPrice.toFixed(2)}</p>
+                <p className="text-lg font-bold mb-2">
+                  ${product.discountedPrice?.toFixed(2) || 'Price not available'}
+                </p>
                 <div className="flex items-center mb-3">
                   {[...Array(5)].map((_, i) => (
                     <span key={i} className={`text-${i < (product.rating || 0) ? 'yellow' : 'gray'}-400`}>★</span>
                   ))}
-                  <span className="ml-2 text-gray-500">({product.reviews.length})</span>
+                  <span className="ml-2 text-gray-500">
+                    ({product.reviews?.length || 0})
+                  </span>
                 </div>
               </div>
-              <button 
+              <button
                 className="p-2 text-red-500"
                 onClick={() => handleRemoveFromFavorites(product._id)}
               >

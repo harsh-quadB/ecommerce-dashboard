@@ -245,12 +245,12 @@ const Products = () => {
           >
             All Products
           </button>
-          <button 
+          {/* <button 
             onClick={() => setShowFavorites(true)}
             className={`px-4 py-2 rounded-md ${showFavorites ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
           >
             Favorites
-          </button>
+          </button> */}
         </div>
       </div>
       
