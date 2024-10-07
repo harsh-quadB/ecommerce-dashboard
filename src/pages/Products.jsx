@@ -237,7 +237,7 @@ const Products = () => {
   return (
     <div className="p-8 relative">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-semibold">Products</h1>
+        <h1 className="text-2xl mt-10 font-semibold">Products</h1>
         <div className="flex space-x-4">
           <button 
             onClick={() => setShowFavorites(false)}
