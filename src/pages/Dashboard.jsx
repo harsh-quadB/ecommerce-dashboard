@@ -23,7 +23,7 @@ function Dashboard() {
     <div className="p-4 md:p-6 lg:p-8 bg-[#F5F6FA]">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 md:mb-8 space-y-4 md:space-y-0">
-        <h1 className="text-xl md:text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-xl md:text-2xl font-semibold mt-10">Dashboard</h1>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
           {/* Search Bar */}
